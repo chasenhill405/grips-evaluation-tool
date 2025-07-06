@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRIPS Interactive Evaluation Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- 
+    Chosen Palette: Calm Harmony (Slate Gray, Sky Blue, White)
+    Application Structure Plan: A single-page dashboard design. A central, interactive GRIPS diagram serves as the primary navigation, allowing users to jump to specific sections for each component (G, R, I, P, S). Each section contains interactive sliders for self-assessment, a real-time radar chart visualizing that component's data, and a text area for qualitative notes. This structure guides the user from detailed component analysis to a final, synthesized overview. This is more intuitive and engaging than a simple linear form, helping the user to see both the details and the big picture of their game.
+    Visualization & Content Choices:
+    - Interactive GRIPS Diagram (HTML/CSS): Goal: Organize/Navigate. A visual hub that's more engaging than a simple menu.
+    - Per-Component Radar Charts (Chart.js): Goal: Compare/Inform. Allows users to see a multi-dimensional view of their skills within each specific component (e.g., separating control from transitions in the Peak Top Game). Sliders provide a tactile, interactive way to input data. Justification: Radar charts are excellent for comparing multiple quantitative metrics on a single visualization.
+    - Summary Polar Area Chart (Chart.js): Goal: Synthesize. Provides a high-level, holistic view of the user's entire game by comparing the overall scores of the five components. Justification: A polar area chart is visually impactful and clearly shows which areas are stronger or weaker relative to others.
+    - Text Areas: Goal: Record/Inform. Captures the crucial qualitative insights and "aha!" moments that numbers can't, directly addressing the "What To Track" sections of the source material.
+    CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 450px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        html { scroll-behavior: smooth; }
+        .grips-ring { display: flex; justify-content: center; align-items: center; width: 300px; height: 300px; border-radius: 50%; position: relative; }
+        .grips-center { width: 120px; height: 120px; background-color: #1e3a8a; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.5rem; z-index: 10; }
+        .grips-item { position: absolute; width: 60px; height: 60px; background-color: #3b82f6; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; cursor: pointer; transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .grips-item:hover { transform: scale(1.1); box-shadow: 0 0 15px rgba(59, 130, 246, 0.7); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900">GRIPS Interactive Evaluation Hub</h1>
+            <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">This tool is designed to help you synthesize your training observations. Use the sliders to rate your abilities in each component and reflect on your notes to build a clear, data-driven picture of your Jiu-Jitsu game.</p>
+        </header>
+
+        <main>
+            <!-- GRIPS Navigation Ring -->
+            <div class="my-12 flex justify-center">
+                <div class="grips-ring">
+                    <div class="grips-center">GRIPS</div>
+                    <a href="#g-section" class="grips-item" style="transform: translate(0, -140px);">G</a>
+                    <a href="#r-section" class="grips-item" style="transform: rotate(72deg) translate(140px) rotate(-72deg);">R</a>
+                    <a href="#i-section" class="grips-item" style="transform: rotate(144deg) translate(140px) rotate(-144deg);">I</a>
+                    <a href="#p-section" class="grips-item" style="transform: rotate(216deg) translate(140px) rotate(-216deg);">P</a>
+                    <a href="#s-section" class="grips-item" style="transform: rotate(288deg) translate(140px) rotate(-288deg);">S</a>
+                </div>
+            </div>
+
+            <!-- Sections Container -->
+            <div class="space-y-12">
+
+                <!-- G: Primary Guard -->
+                <section id="g-section" class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                    <h2 class="text-3xl font-bold text-blue-800 mb-4">G: Primary Guard</h2>
+                    <p class="text-slate-600 mb-6">This component is your main "home base" when you're on your back. It's the guard you funnel your escapes and defensive strategies toward. This evaluation focuses on how effectively you establish and maintain this position under pressure.</p>
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-slate-700">Self-Assessment</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="g-slider-1" class="block text-sm font-medium text-slate-700">Pin Escapes (Efficiency in escaping to your guard)</label>
+                                    <input id="g-slider-1" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                                <div>
+                                    <label for="g-slider-2" class="block text-sm font-medium text-slate-700">Guard Retention (Ability to maintain your guard)</label>
+                                    <input id="g-slider-2" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                                <div>
+                                    <label for="g-slider-3" class="block text-sm font-medium text-slate-700">Scrambling (Effectiveness in scrambles to regain guard)</label>
+                                    <input id="g-slider-3" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="g-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <label for="g-notes" class="block text-lg font-semibold mb-2 text-slate-700">Primary Guard: Key Insights & "Aha!" Moments</label>
+                        <textarea id="g-notes" rows="4" class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., I consistently recover to half-guard, but struggle to retain it against pressure passers..."></textarea>
+                    </div>
+                    <button id="g-insights-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out shadow-md hover:shadow-lg">✨ Get Insights for Primary Guard</button>
+                    <div id="g-insights-output" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 text-slate-700 hidden"></div>
+                    <div id="g-loading-indicator" class="mt-4 text-center text-blue-600 hidden">Loading insights...</div>
+                </section>
+
+                <!-- R: Root Bottom Game -->
+                <section id="r-section" class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                    <h2 class="text-3xl font-bold text-blue-800 mb-4">R: Root Bottom Game</h2>
+                    <p class="text-slate-600 mb-6">This component emphasizes your primary attacks from the bottom. Ideally, these are the sweeping and submission attacks that flow directly from your primary guard. How effectively do you create offensive threats?</p>
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-slate-700">Self-Assessment</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="r-slider-1" class="block text-sm font-medium text-slate-700">Sweep Effectiveness (Executing successful sweeps)</label>
+                                    <input id="r-slider-1" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                                <div>
+                                    <label for="r-slider-2" class="block text-sm font-medium text-slate-700">Submission Attacks (Creating legitimate threats)</label>
+                                    <input id="r-slider-2" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                                <div>
+                                    <label for="r-slider-3" class="block text-sm font-medium text-slate-700">Positional Advancement (Taking the back, etc.)</label>
+                                    <input id="r-slider-3" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="r-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <label for="r-notes" class="block text-lg font-semibold mb-2 text-slate-700">Root Bottom Game: Key Insights & "Aha!" Moments</label>
+                        <textarea id="r-notes" rows="4" class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., My triangle setup from closed guard is strong, but I rarely attempt sweeps..."></textarea>
+                    </div>
+                    <button id="r-insights-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out shadow-md hover:shadow-lg">✨ Get Insights for Root Bottom Game</button>
+                    <div id="r-insights-output" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 text-slate-700 hidden"></div>
+                    <div id="r-loading-indicator" class="mt-4 text-center text-blue-600 hidden">Loading insights...</div>
+                </section>
+
+                <!-- I: Invading Guard Passing -->
+                <section id="i-section" class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                    <h2 class="text-3xl font-bold text-blue-800 mb-4">I: Invading Guard Passing</h2>
+                    <p class="text-slate-600 mb-6">This component defines your preferred style for getting past your opponent's legs. How do you consistently break through their defenses to achieve a dominant top pinning position?</p>
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-slate-700">Self-Assessment</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="i-slider-1" class="block text-sm font-medium text-slate-700">Pressure Passing (e.g., Over-Under, Smash)</label>
+                                    <input id="i-slider-1" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                                <div>
+                                    <label for="i-slider-2" class="block text-sm font-medium text-slate-700">Dynamic Passing (e.g., Toreando, Leg Drag)</label>
+                                    <input id="i-slider-2" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                                <div>
+                                    <label for="i-slider-3" class="block text-sm font-medium text-slate-700">Pass Engagement (Breaking grips and entering)</label>
+                                    <input id="i-slider-3" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="i-chart"></canvas>
+                        </div>
+                    </div>
+                     <div class="mt-6">
+                        <label for="i-notes" class="block text-lg font-semibold mb-2 text-slate-700">Invading Guard Passing: Key Insights & "Aha!" Moments</label>
+                        <textarea id="i-notes" rows="4" class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., I'm more successful with pressure passing but often get stuck when opponents create distance..."></textarea>
+                    </div>
+                    <button id="i-insights-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out shadow-md hover:shadow-lg">✨ Get Insights for Invading Guard Passing</button>
+                    <div id="i-insights-output" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 text-slate-700 hidden"></div>
+                    <div id="i-loading-indicator" class="mt-4 text-center text-blue-600 hidden">Loading insights...</div>
+                </section>
+
+                <!-- P: Peak Top Game -->
+                <section id="p-section" class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                    <h2 class="text-3xl font-bold text-blue-800 mb-4">P: Peak Top Game</h2>
+                    <p class="text-slate-600 mb-6">This is about what you do once you've achieved a dominant pinning position. This focuses on establishing control, shutting down escapes, and relentlessly pursuing submissions.</p>
+                     <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-slate-700">Self-Assessment</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="p-slider-1" class="block text-sm font-medium text-slate-700">Positional Maintenance (Weight & Wedges)</label>
+                                    <input id="p-slider-1" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                                <div>
+                                    <label for="p-slider-2" class="block text-sm font-medium text-slate-700">Transitions (Moving between pins)</label>
+                                    <input id="p-slider-2" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                                <div>
+                                    <label for="p-slider-3" class="block text-sm font-medium text-slate-700">Submission Finishing Rate (From dominant positions)</label>
+                                    <input id="p-slider-3" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="p-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <label for="p-notes" class="block text-lg font-semibold mb-2 text-slate-700">Peak Top Game: Key Insights & "Aha!" Moments</label>
+                        <textarea id="p-notes" rows="4" class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., I'm good at holding side control, but I hesitate to transition to mount or attack submissions..."></textarea>
+                    </div>
+                    <button id="p-insights-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out shadow-md hover:shadow-lg">✨ Get Insights for Peak Top Game</button>
+                    <div id="p-insights-output" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 text-slate-700 hidden"></div>
+                    <div id="p-loading-indicator" class="mt-4 text-center text-blue-600 hidden">Loading insights...</div>
+                </section>
+
+                <!-- S: Standing Game -->
+                <section id="s-section" class="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                    <h2 class="text-3xl font-bold text-blue-800 mb-4">S: Standing Game</h2>
+                    <p class="text-slate-600 mb-6">This is your approach to getting the fight to the ground. This includes your takedowns, throws, and guard pulls, as well as your defense against your opponent's attempts.</p>
+                     <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-slate-700">Self-Assessment</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="s-slider-1" class="block text-sm font-medium text-slate-700">Takedown Offense (Initiating and finishing)</label>
+                                    <input id="s-slider-1" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                                <div>
+                                    <label for="s-slider-2" class="block text-sm font-medium text-slate-700">Takedown Defense (Sprawling, grip breaking)</label>
+                                    <input id="s-slider-2" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                                <div>
+                                    <label for="s-slider-3" class="block text-sm font-medium text-slate-700">Guard Pulling (Effectiveness and safety)</label>
+                                    <input id="s-slider-3" type="range" min="0" max="10" value="5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="s-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <label for="s-notes" class="block text-lg font-semibold mb-2 text-slate-700">Standing Game: Key Insights & "Aha!" Moments</label>
+                        <textarea id="s-notes" rows="4" class="w-full p-3 bg-slate-100 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., I hesitate to shoot for takedowns. My default is to pull guard, which often puts me in a defensive cycle..."></textarea>
+                    </div>
+                    <button id="s-insights-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 ease-in-out shadow-md hover:shadow-lg">✨ Get Insights for Standing Game</button>
+                    <div id="s-insights-output" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 text-slate-700 hidden"></div>
+                    <div id="s-loading-indicator" class="mt-4 text-center text-blue-600 hidden">Loading insights...</div>
+                </section>
+                
+                <!-- Synthesis Section -->
+                <section id="synthesis-section" class="bg-blue-900 text-white p-6 md:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-3xl font-bold text-center mb-4">Your Game at a Glance: Synthesis</h2>
+                    <p class="text-center text-blue-200 mb-8 max-w-3xl mx-auto">This is the final summary of your self-evaluation. The chart below combines your scores from all GRIPS components into a single view. Use the text boxes to articulate your biggest strengths and the areas you're most excited to improve.</p>
+                    <div class="bg-white/10 p-4 rounded-lg">
+                        <div class="chart-container" style="height: 350px; max-width: 500px; max-height: 450px;">
+                            <canvas id="summary-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-8 grid md:grid-cols-2 gap-8">
+                        <div>
+                            <label for="strengths" class="block text-lg font-semibold mb-2">My Top 3 Strengths</label>
+                            <textarea id="strengths" rows="5" class="w-full p-3 bg-blue-800 border border-blue-600 rounded-lg focus:ring-2 focus:ring-sky-400 placeholder-blue-300" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
+                        </div>
+                         <div>
+                            <label for="weaknesses" class="block text-lg font-semibold mb-2">My Top 3 Areas for Improvement</label>
+                            <textarea id="weaknesses" rows="5" class="w-full p-3 bg-blue-800 border border-blue-600 rounded-lg focus:ring-2 focus:ring-sky-400 placeholder-blue-300" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
+                        </div>
+                    </div>
+                    <button id="overall-analysis-btn" class="mt-8 w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200 ease-in-out shadow-lg hover:shadow-xl text-xl">✨ Analyze My Overall Game</button>
+                    <div id="overall-analysis-output" class="mt-6 p-4 bg-blue-800 rounded-lg border border-blue-600 text-blue-100 hidden"></div>
+                    <div id="overall-loading-indicator" class="mt-4 text-center text-sky-400 hidden">Analyzing your game...</div>
+                </section>
+
+            </div>
+
+        </main>
+        
+        <footer class="text-center mt-12 py-4 border-t border-slate-200">
+            <p class="text-slate-500 text-sm">GRIPS Evaluation System | Phase 1: Self-Evaluation</p>
+        </footer>
+
+    </div>
+
+    <script>
+        const chartData = {
+            g: {
+                labels: ['Pin Escapes', 'Guard Retention', 'Scrambling'],
+                values: [5, 5, 5],
+                chart: null,
+                sliders: ['g-slider-1', 'g-slider-2', 'g-slider-3'],
+                notesId: 'g-notes',
+                insightsBtnId: 'g-insights-btn',
+                insightsOutputId: 'g-insights-output',
+                loadingId: 'g-loading-indicator'
+            },
+            r: {
+                labels: ['Sweep Effectiveness', 'Submission Attacks', 'Positional Advancement'],
+                values: [5, 5, 5],
+                chart: null,
+                sliders: ['r-slider-1', 'r-slider-2', 'r-slider-3'],
+                notesId: 'r-notes',
+                insightsBtnId: 'r-insights-btn',
+                insightsOutputId: 'r-insights-output',
+                loadingId: 'r-loading-indicator'
+            },
+            i: {
+                labels: ['Pressure Passing', 'Dynamic Passing', 'Pass Engagement'],
+                values: [5, 5, 5],
+                chart: null,
+                sliders: ['i-slider-1', 'i-slider-2', 'i-slider-3'],
+                notesId: 'i-notes',
+                insightsBtnId: 'i-insights-btn',
+                insightsOutputId: 'i-insights-output',
+                loadingId: 'i-loading-indicator'
+            },
+            p: {
+                labels: ['Positional Maint.', 'Transitions', 'Finishing Rate'],
+                values: [5, 5, 5],
+                chart: null,
+                sliders: ['p-slider-1', 'p-slider-2', 'p-slider-3'],
+                notesId: 'p-notes',
+                insightsBtnId: 'p-insights-btn',
+                insightsOutputId: 'p-insights-output',
+                loadingId: 'p-loading-indicator'
+            },
+            s: {
+                labels: ['Takedown Offense', 'Takedown Defense', 'Guard Pulling'],
+                values: [5, 5, 5],
+                chart: null,
+                sliders: ['s-slider-1', 's-slider-2', 's-slider-3'],
+                notesId: 's-notes',
+                insightsBtnId: 's-insights-btn',
+                insightsOutputId: 's-insights-output',
+                loadingId: 's-loading-indicator'
+            }
+        };
+
+        let summaryChart = null;
+
+        const chartOptions = {
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
+                    grid: { color: 'rgba(255, 255, 255, 0.2)' },
+                    pointLabels: {
+                        color: 'rgb(51 65 85)',
+                        font: { size: 12 },
+                        callback: function(label) {
+                            if (label.length > 16) {
+                                return label.split(' ').map((word, i, arr) => {
+                                    if (word.length > 8 && i < arr.length - 1) return word + '-';
+                                    return word;
+                                }).join(' ').match(/.{1,16}(\s|$)/g);
+                            }
+                            return label;
+                        }
+                    },
+                    ticks: {
+                        color: 'rgb(100 116 139)',
+                        backdropColor: 'rgba(0, 0, 0, 0)',
+                        stepSize: 2,
+                        beginAtZero: true,
+                        max: 10
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += context.parsed.r;
+                            return label;
+                        }
+                    }
+                }
+            }
+        };
+        
+        const summaryChartOptions = {
+             maintainAspectRatio: false,
+             plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: 'white',
+                        font: { size: 14 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.r !== null) {
+                                label += context.parsed.r.toFixed(1);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
+                    grid: { color: 'rgba(255, 255, 255, 0.2)' },
+                    pointLabels: {
+                        color: 'white',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        display: false,
+                        stepSize: 2,
+                        beginAtZero: true,
+                        max: 10
+                    }
+                }
+            }
+        };
+
+        function createRadarChart(ctx, labels, data) {
+            const chartConfig = JSON.parse(JSON.stringify(chartOptions));
+            
+            return new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Self-Assessment',
+                        data: data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: chartConfig
+            });
+        }
+        
+        function createSummaryChart(ctx, data) {
+            return new Chart(ctx, {
+                type: 'polarArea',
+                data: {
+                    labels: ['Primary Guard', 'Root Bottom', 'Invading Pass', 'Peak Top', 'Standing'],
+                    datasets: [{
+                        label: 'Overall Score',
+                        data: data,
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ],
+                        borderColor: 'white',
+                        borderWidth: 2
+                    }]
+                },
+                options: summaryChartOptions
+            });
+        }
+        
+        function getAverage(arr) {
+            if (arr.length === 0) return 0;
+            return arr.reduce((a, b) => a + b, 0) / arr.length;
+        }
+
+        function updateSummaryChart() {
+            const summaryData = [
+                getAverage(chartData.g.values),
+                getAverage(chartData.r.values),
+                getAverage(chartData.i.values),
+                getAverage(chartData.p.values),
+                getAverage(chartData.s.values)
+            ];
+            if (summaryChart) {
+                summaryChart.data.datasets[0].data = summaryData;
+                summaryChart.update();
+            }
+        }
+
+        async function getGeminiInsights(componentKey) {
+            const component = chartData[componentKey];
+            const notes = document.getElementById(component.notesId).value;
+            const outputDiv = document.getElementById(component.insightsOutputId);
+            const loadingDiv = document.getElementById(component.loadingId);
+
+            outputDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+
+            const labels = component.labels.join(', ');
+            const values = component.values.join(', ');
+
+            const prompt = `Analyze my Jiu-Jitsu performance for the "${componentKey.toUpperCase()}: ${document.querySelector(`#${componentKey}-section h2`).textContent.split(':')[1].trim()}" component. My self-assessment scores (0-10) for ${labels} are: ${values}. My personal notes are: "${notes}". Provide specific, actionable insights, drills, or strategic advice based on this data, focusing on improving weaker areas and leveraging strengths. Keep it concise, around 150 words.`;
+
+            try {
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    outputDiv.textContent = text;
+                    outputDiv.classList.remove('hidden');
+                } else {
+                    outputDiv.textContent = "Could not generate insights. Please try again.";
+                    outputDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                outputDiv.textContent = `Error generating insights: ${error.message}. Please try again.`;
+                outputDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        async function analyzeOverallGame() {
+            const outputDiv = document.getElementById('overall-analysis-output');
+            const loadingDiv = document.getElementById('overall-loading-indicator');
+            const strengthsNotes = document.getElementById('strengths').value;
+            const weaknessesNotes = document.getElementById('weaknesses').value;
+
+            outputDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+
+            let allNotes = "";
+            const componentAverages = {};
+            for (const key in chartData) {
+                const component = chartData[key];
+                const componentName = document.querySelector(`#${key}-section h2`).textContent.split(':')[1].trim();
+                const avgScore = getAverage(component.values).toFixed(1);
+                componentAverages[componentName] = avgScore;
+                allNotes += `\n${componentName} Notes: ${document.getElementById(component.notesId).value}`;
+            }
+
+            const prompt = `I have evaluated my Jiu-Jitsu game across five GRIPS components. Here are my average scores for each component (0-10):
+            Primary Guard: ${componentAverages['Primary Guard']}
+            Root Bottom Game: ${componentAverages['Root Bottom Game']}
+            Invading Guard Passing: ${componentAverages['Invading Guard Passing']}
+            Peak Top Game: ${componentAverages['Peak Top Game']}
+            Standing Game: ${componentAverages['Standing Game']}
+
+            My top strengths are: "${strengthsNotes}"
+            My top areas for improvement are: "${weaknessesNotes}"
+            Additional notes from my evaluation sessions: "${allNotes}"
+
+            Please provide a holistic analysis of my Jiu-Jitsu game based on this data. Identify overall patterns, potential synergies or conflicts between components, and suggest the most impactful area(s) to focus on for my next phase of training. Keep the analysis concise, around 250 words.`;
+
+            try {
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    outputDiv.textContent = text;
+                    outputDiv.classList.remove('hidden');
+                } else {
+                    outputDiv.textContent = "Could not generate overall analysis. Please try again.";
+                    outputDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                outputDiv.textContent = `Error generating analysis: ${error.message}. Please try again.`;
+                outputDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            for (const key in chartData) {
+                const component = chartData[key];
+                const ctx = document.getElementById(`${key}-chart`).getContext('2d');
+                component.chart = createRadarChart(ctx, component.labels, component.values);
+
+                component.sliders.forEach((sliderId, index) => {
+                    const slider = document.getElementById(sliderId);
+                    slider.addEventListener('input', (event) => {
+                        component.values[index] = parseInt(event.target.value, 10);
+                        component.chart.data.datasets[0].data = component.values;
+                        component.chart.update();
+                        updateSummaryChart();
+                    });
+                });
+
+                const insightsBtn = document.getElementById(component.insightsBtnId);
+                if (insightsBtn) {
+                    insightsBtn.addEventListener('click', () => getGeminiInsights(key));
+                }
+            }
+            
+            const summaryCtx = document.getElementById('summary-chart').getContext('2d');
+            const initialSummaryData = [
+                getAverage(chartData.g.values),
+                getAverage(chartData.r.values),
+                getAverage(chartData.i.values),
+                getAverage(chartData.p.values),
+                getAverage(chartData.s.values)
+            ];
+            summaryChart = createSummaryChart(summaryCtx, initialSummaryData);
+
+            const overallAnalysisBtn = document.getElementById('overall-analysis-btn');
+            if (overallAnalysisBtn) {
+                overallAnalysisBtn.addEventListener('click', analyzeOverallGame);
+            }
+        });
+    </script>
+</body>
+</html>
